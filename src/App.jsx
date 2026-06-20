@@ -1,5 +1,7 @@
+import TrainsSimulator from './pages/TrainsSimulator.jsx';
+
 function App() {
-  return <h1>Simulation Engine</h1>;
+  return <TrainsSimulator />;
 }
 
 export default App;
