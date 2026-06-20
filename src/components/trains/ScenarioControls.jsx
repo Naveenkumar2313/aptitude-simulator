@@ -5,14 +5,14 @@ import './trains.css';
 export default function ScenarioControls({ problem, draft, setDraft }) {
   const solveFor = problem.params.solveFor?.field;
   const ed = problem.editable || {
-    speedA: solveFor !== 'speedA',
+    speedA: solveFor !== 'speedA' && draft.entityA !== undefined,
     speedB: solveFor !== 'speedB' && draft.entityB && (draft.entityB.kind === 'train' || draft.entityB.speedKmph > 0),
-    lengthA: solveFor !== 'lengthA',
+    lengthA: solveFor !== 'lengthA' && draft.entityA !== undefined,
     lengthB: solveFor !== 'lengthB' && draft.entityB?.kind === 'train',
     direction: draft.sameDirection !== undefined,
-    afterMeetHoursA: true,
-    afterMeetHoursB: true,
-    referenceSpeedBKmph: true,
+    afterMeetHoursA: draft.trainA !== undefined,
+    afterMeetHoursB: draft.trainB !== undefined,
+    referenceSpeedBKmph: draft.referenceSpeedBKmph !== undefined,
   };
 
   if (problem.methodId === 'crossingEvent') {
@@ -20,32 +20,32 @@ export default function ScenarioControls({ problem, draft, setDraft }) {
       <div className="trains-controls-grid">
         {ed.speedA && (
           <FieldControl
-            label={`${draft.entityA.label} speed`}
-            value={draft.entityA.speedKmph}
+            label={`${draft.entityA?.label} speed`}
+            value={draft.entityA?.speedKmph}
             min={1} max={180} step={1} unit="km/hr"
             onChange={(v) => setDraft((d) => ({ ...d, entityA: { ...d.entityA, speedKmph: v } }))}
           />
         )}
         {ed.speedB && (
           <FieldControl
-            label={`${draft.entityB.label} speed`}
-            value={draft.entityB.speedKmph}
+            label={`${draft.entityB?.label} speed`}
+            value={draft.entityB?.speedKmph}
             min={0} max={180} step={1} unit="km/hr"
             onChange={(v) => setDraft((d) => ({ ...d, entityB: { ...d.entityB, speedKmph: v } }))}
           />
         )}
         {ed.lengthA && (
           <FieldControl
-            label={`${draft.entityA.label} length`}
-            value={draft.entityA.length}
+            label={`${draft.entityA?.label} length`}
+            value={draft.entityA?.length}
             min={10} max={2000} step={5} unit="m"
             onChange={(v) => setDraft((d) => ({ ...d, entityA: { ...d.entityA, length: v } }))}
           />
         )}
         {ed.lengthB && (
           <FieldControl
-            label={`${draft.entityB.label} length`}
-            value={draft.entityB.length}
+            label={`${draft.entityB?.label} length`}
+            value={draft.entityB?.length}
             min={0} max={2000} step={5} unit="m"
             onChange={(v) => setDraft((d) => ({ ...d, entityB: { ...d.entityB, length: v } }))}
           />
@@ -80,7 +80,7 @@ export default function ScenarioControls({ problem, draft, setDraft }) {
     <div className="trains-controls-grid">
       {ed.afterMeetHoursA && (
         <FieldControl
-          label={`${draft.trainA.label} time after meeting`}
+          label={`${draft.trainA?.label} time after meeting`}
           value={draft.afterMeetHoursA}
           min={1} max={40} step={0.5} unit="hr"
           onChange={(v) => setDraft((d) => ({ ...d, afterMeetHoursA: v }))}
@@ -88,7 +88,7 @@ export default function ScenarioControls({ problem, draft, setDraft }) {
       )}
       {ed.afterMeetHoursB && (
         <FieldControl
-          label={`${draft.trainB.label} time after meeting`}
+          label={`${draft.trainB?.label} time after meeting`}
           value={draft.afterMeetHoursB}
           min={1} max={40} step={0.5} unit="hr"
           onChange={(v) => setDraft((d) => ({ ...d, afterMeetHoursB: v }))}
@@ -96,7 +96,7 @@ export default function ScenarioControls({ problem, draft, setDraft }) {
       )}
       {ed.referenceSpeedBKmph && (
         <FieldControl
-          label={`${draft.trainB.label} reference speed (visualization scale only)`}
+          label={`${draft.trainB?.label} reference speed (visualization scale only)`}
           value={draft.referenceSpeedBKmph}
           min={10} max={150} step={5} unit="km/hr"
           onChange={(v) => setDraft((d) => ({ ...d, referenceSpeedBKmph: v }))}
