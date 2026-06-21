@@ -50,12 +50,43 @@ export function meetAndContinue({ stationA, stationB, trainA, trainB, afterMeetH
     `Step 4 — Meeting time = √(tA × tB) = √(${afterMeetHoursA} × ${afterMeetHoursB}) = ${(meetT / 3600).toFixed(2)} hours (only needed to animate the scenario at a real scale; the ratio answer itself never depends on the reference speed).`,
   ];
 
+  const moments = [
+    {
+      id: 'WHY_RELATIVE_SPEED',
+      t: 0,
+      trigger: 'observation',
+      observation: `${trainA.label} and ${trainB.label} are both moving toward each other.`,
+      reason: `Because they are heading toward each other, the gap between them closes at the SUM of their speeds.`,
+      therefore: `Relative speed = v_A + v_B.`,
+      relatedFormula: `v_rel = v_A + v_B`,
+    },
+    {
+      id: 'WHY_SQRT_RULE',
+      t: meetT,
+      trigger: 'observation',
+      observation: `They have met. From here, each train retraces the exact distance the OTHER train had already covered before the meeting.`,
+      reason: `Because they swap distances but travel at their own constant speeds, their speeds and remaining times form a reciprocal square relationship.`,
+      therefore: `The ratio of their speeds is the square root of the inverse ratio of their remaining times.`,
+      relatedFormula: `v_A / v_B = √(t_B / t_A)`,
+    },
+    {
+      id: 'FINAL_RATIO',
+      t: Math.min(arriveAT, arriveBT),
+      trigger: 'observation',
+      observation: `One train has arrived. The remaining times are ${afterMeetHoursA} h and ${afterMeetHoursB} h.`,
+      reason: `Plugging these remaining times into the identity: √(${afterMeetHoursB} / ${afterMeetHoursA}).`,
+      therefore: `The speed ratio is ${ratio.toFixed(3)} : 1.`,
+      relatedFormula: `Ratio = ${ratio.toFixed(3)}`,
+    }
+  ];
+
   return {
     duration,
     track: { unit: 'm', min: -distance * 0.05, max: distance * 1.05 },
     entities,
     events,
     steps,
+    moments,
     answer: { label: 'Speed ratio (A:B)', value: Number(ratio.toFixed(3)), unit: 'ratio' },
     explanation,
   };

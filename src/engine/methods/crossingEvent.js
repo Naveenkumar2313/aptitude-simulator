@@ -44,6 +44,15 @@ export function crossingEvent({ entityA, entityB, sameDirection }) {
         `Step 2 — Same direction, so relative speed = |${speedA.toFixed(2)} - ${speedB.toFixed(2)}| = 0 m/sec.`,
         `Relative speed is 0, so the gap between them is constant forever — they never cross. Vary a speed input to see a real crossing.`,
       ],
+      moments: [{
+        id: 'WHY_STALEMATE',
+        t: 0,
+        trigger: 'observation',
+        observation: `${entityA.label} and ${entityB.label} move at identical speed in the same direction.`,
+        reason: `The gap between them never changes.`,
+        therefore: `They never cross.`,
+        relatedFormula: `v_rel = 0`,
+      }],
     };
   }
 
@@ -102,12 +111,72 @@ export function crossingEvent({ entityA, entityB, sameDirection }) {
     `Step 4 — Time = Distance ÷ Relative speed = ${combinedLength} ÷ ${relativeSpeed.toFixed(2)} = ${crossTime.toFixed(2)} sec.`,
   ];
 
+  const moments = [];
+  if (speedB > 0 && speedA > 0) {
+    moments.push({
+      id: 'WHY_RELATIVE_SPEED',
+      t: 0,
+      trigger: 'observation',
+      observation: `${entityA.label} and ${entityB.label} are both moving — but the gap between them isn't closing at either train's own speed.`,
+      reason: sameDirection
+        ? `${entityB.label} is also moving forward, so ${entityA.label} only gains ground at the DIFFERENCE between their speeds.`
+        : `${entityB.label} is moving toward ${entityA.label}, so the gap closes at the SUM of their speeds.`,
+      therefore: `Relative speed = ${relativeSpeed.toFixed(2)} m/sec.`,
+      relatedFormula: sameDirection ? "v_rel = |v_A - v_B|" : "v_rel = v_A + v_B",
+    });
+
+    if (!sameDirection) {
+      moments.push({
+        id: 'WHY_DIRECTION_CHANGES_RESULT',
+        t: 0,
+        trigger: 'observation',
+        observation: `If they were going the same direction, the relative speed would only be ${Math.abs(speedA - speedB).toFixed(2)} m/sec.`,
+        reason: `Because they are heading toward each other, their speeds combine instead of subtracting.`,
+        therefore: `Direction determines whether speeds add or subtract.`,
+        relatedFormula: `v_rel = v_A + v_B vs |v_A - v_B|`,
+      });
+    }
+  } else if (speedB === 0 || speedA === 0) {
+    const moving = speedB === 0 ? entityA : entityB;
+    const stationary = speedB === 0 ? entityB : entityA;
+    moments.push({
+      id: 'WHY_RELATIVE_SPEED',
+      t: 0,
+      trigger: 'observation',
+      observation: `${stationary.label} is stationary, so only ${moving.label} is moving.`,
+      reason: `The gap between them closes entirely at ${moving.label}'s speed.`,
+      therefore: `Relative speed = ${relativeSpeed.toFixed(2)} m/sec.`,
+      relatedFormula: `v_rel = v_A`,
+    });
+  }
+
+  moments.push({
+    id: 'WHY_DISTANCE_IS_LENGTHA_PLUS_LENGTHB',
+    t: crossStartT,
+    trigger: 'observation',
+    observation: `Crossing has started — but ${entityA.label}'s FRONT reaching ${entityB.label} doesn't mean the crossing is done.`,
+    reason: `${entityA.label}'s REAR end hasn't reached ${entityB.label} yet — and if ${entityB.label} has any length of its own, that has to be cleared too.`,
+    therefore: `Distance covered = length(${entityA.label}) + length(${entityB.label}) = ${combinedLength} m.`,
+    relatedFormula: `d = L_A + L_B`,
+  });
+
+  moments.push({
+    id: 'WHY_CROSSING_TIME',
+    t: crossEndT,
+    trigger: 'observation',
+    observation: `${entityA.label} has now fully cleared ${entityB.label}.`,
+    reason: `It took this long to cover ${combinedLength} m at ${relativeSpeed.toFixed(2)} m/sec relative speed.`,
+    therefore: `Time = Distance / Relative speed = ${crossTime.toFixed(2)} sec.`,
+    relatedFormula: `t = d / v_rel`,
+  });
+
   return {
     duration,
     track: { unit: 'm', min: trackMin, max: trackMax },
     entities,
     events,
     steps,
+    moments,
     answer: { label: 'Crossing time', value: Number(crossTime.toFixed(2)), unit: 's' },
     explanation,
   };

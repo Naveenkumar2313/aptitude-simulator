@@ -58,6 +58,23 @@
 //   formula: string,              // e.g. "Relative speed = u + v (opposite directions)"
 //   text: string,                 // human explanation with this problem's numbers substituted
 // }
+//
+// Moment
+// ------
+// {
+//   id: string,                 // e.g. 'WHY_DISTANCE_IS_LENGTHA_PLUS_LENGTHB'
+//   t: number,                  // when this becomes relevant in the timeline
+//   trigger: 'observation',     // reserved for future trigger types
+//   observation: string,        // what the learner sees happening right now,
+//                                // phrased as a noticed fact, not a formula
+//                                // e.g. "The train's rear end is still behind the bridge."
+//   reason: string,             // why that's true, in plain language
+//                                // e.g. "Because only the front has reached the far edge so far."
+//   therefore: string,          // the formula/conclusion this justifies, stated
+//                                // as a consequence, not a definition
+//                                // e.g. "Distance to cover = Train Length + Bridge Length."
+//   relatedFormula: string,     // the compact symbolic form, e.g. "d = L_train + L_bridge"
+// }
 
 /** Runtime guard — cheap insurance against a method returning a malformed timeline. */
 export function assertValidTimeline(tl) {
@@ -75,6 +92,11 @@ export function assertValidTimeline(tl) {
   });
   if (!Array.isArray(tl?.events)) errs.push('events[] required (can be empty — e.g. the stalemate case)');
   if (!Array.isArray(tl?.steps)) errs.push('steps[] required (can be empty)');
+  if (!Array.isArray(tl?.moments)) {
+    errs.push('moments[] required (can be empty)');
+  } else if (tl.entities && tl.entities.length >= 2 && !tl.stalemate && tl.moments.length < 2) {
+    errs.push('moments[] needs at least 2 entries for non-stalemate crossings with 2+ entities');
+  }
   if (!Array.isArray(tl?.explanation) || tl.explanation.length === 0) errs.push('explanation[] required and must be non-empty');
   if (errs.length) throw new Error('Invalid timeline:\n' + errs.join('\n'));
   return true;
