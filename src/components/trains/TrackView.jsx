@@ -48,33 +48,44 @@ export default function TrackView({ timeline, t }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [timeline.track.min, timeline.track.max]);
 
+  const rafRunningRef = useRef(false);
+  const rafRef = useRef(null);
+
   useEffect(() => {
-    let raf;
-    const tick = () => {
-      const current = viewRef.current;
-      const target = targetRef.current;
-      
-      const lerp = (start, end, amt) => start + (end - start) * amt;
-      const f = 0.08;
-      
-      const nextMin = lerp(current.min, target.min, f);
-      const nextMax = lerp(current.max, target.max, f);
-      
-      const diff = Math.abs(nextMin - target.min) + Math.abs(nextMax - target.max);
-      
-      if (diff > 0.5) {
-        viewRef.current = { min: nextMin, max: nextMax };
-        setView(viewRef.current);
-      } else if (diff > 0 && diff <= 0.5) {
-        viewRef.current = target;
-        setView(target);
-      }
-      
-      raf = requestAnimationFrame(tick);
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
   }, []);
+
+  useEffect(() => {
+    targetRef.current = targetBounds;
+    if (!rafRunningRef.current) {
+      rafRunningRef.current = true;
+      const tick = () => {
+        const current = viewRef.current;
+        const target = targetRef.current;
+        
+        const lerp = (start, end, amt) => start + (end - start) * amt;
+        const f = 0.08;
+        
+        const nextMin = lerp(current.min, target.min, f);
+        const nextMax = lerp(current.max, target.max, f);
+        
+        const diff = Math.abs(nextMin - target.min) + Math.abs(nextMax - target.max);
+        
+        if (diff > 0.5) {
+          viewRef.current = { min: nextMin, max: nextMax };
+          setView(viewRef.current);
+          rafRef.current = requestAnimationFrame(tick);
+        } else {
+          viewRef.current = target;
+          setView(target);
+          rafRunningRef.current = false;
+        }
+      };
+      rafRef.current = requestAnimationFrame(tick);
+    }
+  }, [targetBounds]);
 
   const span = view.max - view.min || 1;
   const scale = (W - padX * 2) / span;

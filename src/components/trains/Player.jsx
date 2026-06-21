@@ -93,6 +93,8 @@ export default function Player({ problem, draft }) {
     return [...timeline.moments].sort((a, b) => a.t - b.t);
   }, [timeline]);
 
+  const pendingActionRef = useRef(null);
+
   useEffect(() => {
     if (!playing || timeline.error) {
       lastRef.current = null;
@@ -102,6 +104,9 @@ export default function Player({ problem, draft }) {
       if (lastRef.current == null) lastRef.current = now;
       const dt = (now - lastRef.current) / 1000;
       lastRef.current = now;
+
+      pendingActionRef.current = null; // Clear before updater
+
       setT((prev) => {
         let next = prev + dt * speedMult * (timeline.duration / 6);
         let pauseIndex = -1;
@@ -116,20 +121,30 @@ export default function Player({ problem, draft }) {
         }
 
         if (pauseIndex !== -1) {
-          setTimeout(() => {
-            setPlaying(false);
-            setPausedAtMomentIndex(pauseIndex);
-          }, 0);
+          pendingActionRef.current = { type: 'pause', index: pauseIndex };
           return next;
         }
 
         if (next >= timeline.duration) {
-          setTimeout(() => setPlaying(false), 0);
+          pendingActionRef.current = { type: 'done' };
           return timeline.duration;
         }
-        rafRef.current = requestAnimationFrame(tick);
+
+        pendingActionRef.current = { type: 'continue' };
         return next;
       });
+
+      // Execute side-effects precisely once based on what the pure updater decided
+      const action = pendingActionRef.current;
+      if (action?.type === 'pause') {
+        setPlaying(false);
+        setPausedAtMomentIndex(action.index);
+      } else if (action?.type === 'done') {
+        setPlaying(false);
+      } else {
+        // If continue, or if React deferred the updater (meaning we must keep looping to eventually process it)
+        rafRef.current = requestAnimationFrame(tick);
+      }
     };
     rafRef.current = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(rafRef.current);
